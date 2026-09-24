@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -253,7 +254,17 @@ public class DevicesFragment extends ListFragment {
         menu.findItem(R.id.ble_scan_stop).setVisible(true);
         if(scanState == ScanState.LE_SCAN) {
             leScanStopHandler.postDelayed(leScanStopCallback, LE_SCAN_PERIOD);
-            new Thread(() -> scanner.startScan(leScanCallback), "startLeScan")
+            ScanSettings settings = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // BLE 5 extended advertising (non-legacy) is only reported when legacy=false;
+                // the default is legacy-only (BLE 4.2 and below).
+                settings = new ScanSettings.Builder()
+                        .setLegacy(false)
+                        .setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED)
+                        .build();
+            }
+            final ScanSettings scanSettings = settings;
+            new Thread(() -> scanner.startScan(null, scanSettings, leScanCallback), "startLeScan")
                     .start(); // start async to prevent blocking UI
         } else {
             bluetoothAdapter.startDiscovery();
@@ -304,7 +315,7 @@ public class DevicesFragment extends ListFragment {
         stopScan();
         BluetoothUtil.Device device = listItems.get(position-1);
         Bundle args = new Bundle();
-        args.putString("device", device.getDevice().getAddress());
+        args.putParcelable("device", device.getDevice()); // keeps address type (public/random)
         Fragment fragment = new TerminalFragment();
         fragment.setArguments(args);
         getFragmentManager().beginTransaction().replace(R.id.fragment, fragment, "terminal").addToBackStack(null).commit();

@@ -3,7 +3,6 @@ package de.kai_morich.simple_bluetooth_le_terminal;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
@@ -37,7 +36,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private enum Connected { False, Pending, True }
 
-    private String deviceAddress;
+    private BluetoothDevice device;
     private SerialService service;
 
     private TextView receiveText;
@@ -58,7 +57,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         setRetainInstance(true);
-        deviceAddress = getArguments().getString("device");
+        device = getArguments().getParcelable("device");
     }
 
     @Override
@@ -202,8 +201,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
      */
     private void connect() {
         try {
-            BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
             status("connecting...");
             connected = Connected.Pending;
             SerialSocket socket = new SerialSocket(getActivity().getApplicationContext(), device);
